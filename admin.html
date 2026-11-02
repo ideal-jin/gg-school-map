@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>인사구역 지도 관리</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body{display:block;overflow:auto}
+  .wrap{max-width:980px;margin:0 auto;padding:16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+  .card h2{font-size:16px;margin:0 0 8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+  label.f{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}
+  input[type=text],input[type=password],input[type=date],select,textarea{font:inherit;border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .err{color:#b42318} .ok{color:#1f6b3a}
+  pre{white-space:pre-wrap;font-size:12px;background:#f6f7f9;border-radius:6px;padding:8px;max-height:320px;overflow:auto}
+  table{border-collapse:collapse;width:100%;font-size:12.5px} td,th{border:1px solid var(--line);padding:3px 6px;text-align:left}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 style="font-size:18px">인사구역 지도 자료 관리 <a class="small" href="./">← 지도</a></h1>
+
+  <div class="card" id="loginCard">
+    <h2>관리자 로그인</h2>
+    <p class="small muted">자료 수정은 관리자만 할 수 있습니다. 서버 실행 시 설정한 비밀번호로 로그인하세요. 정적 호스팅(서버 없이 파일만 올린 경우)에서는 관리 기능이 동작하지 않습니다.</p>
+    <form id="loginForm" class="grid">
+      <label class="f">비밀번호<input type="password" id="pw" autocomplete="current-password" required></label>
+      <div style="align-self:end"><button class="btn primary">로그인</button></div>
+    </form>
+    <div id="loginMsg" class="err small"></div>
+  </div>
+
+  <div id="adminArea" hidden>
+    <div class="card">
+      <h2>자료 갱신 (CSV 또는 엑셀)</h2>
+      <p class="small muted">먼저 <b>미리보기</b>로 검증 오류와 변경 내역을 확인한 뒤 <b>적용</b>하세요. 적용 시 기존 파일은 versions 폴더에 보관되고, 학교별 변경 이력이 기록됩니다.</p>
+      <form id="impForm" class="grid">
+        <label class="f">자료 종류
+          <select id="kind">
+            <option value="schools">학교·인사구역 (schools.csv 형식)</option>
+            <option value="bonus">승진 가산점 (promotion_bonus.csv 형식)</option>
+            <option value="locations">검증 좌표 (key,address,lat,lng,source,checked)</option>
+          </select></label>
+        <label class="f">기준 연도<input type="text" id="year" value="2027" pattern="\d{4}" required></label>
+        <label class="f">파일<input type="file" id="file" accept=".csv,.xlsx,.xls" required></label>
+        <label class="f newyear">새 연도 적용 시작일<input type="date" id="effFrom"></label>
+        <label class="f newyear">새 연도 근거 문서명<input type="text" id="docName" placeholder="2028학년도 경기도교육공무원인사관리세부기준(유치원, 초등) [별표1]"></label>
+        <label class="f" style="grid-column:1/-1">변경 사유·근거(필수)<input type="text" id="comment" placeholder="예: 2027.3.1. 도서벽지 지정 고시(경기도교육청 고시 제○호) 반영"></label>
+        <div><button type="button" class="btn" id="previewBtn">미리보기</button> <button type="button" class="btn primary" id="applyBtn" disabled>적용</button></div>
+      </form>
+      <div id="impMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>내려받기 · 양식</h2>
+      <ul class="small">
+        <li><a href="data/2027/schools.csv" download>2027 학교·인사구역 CSV</a></li>
+        <li><a href="data/bonus/promotion_bonus.csv" download>승진 가산점 CSV (양식 겸용)</a> — 한 행이 한 지정기간입니다. 지정 자료명(designation_doc), 쪽수, 지정 시작일, 확인일이 없으면 거부됩니다. 월평정점·상한점은 근거 평정 규정(rule_doc)과 함께 입력해야 하며, 비워 두면 화면에 '확인 필요'로 표시됩니다.</li>
+        <li><a href="data/sources/locations_verified.csv" download>검증 좌표 CSV 양식</a> (열: key,address,lat,lng,source,checked)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>변경 이력</h2>
+      <div class="grid"><label class="f">학교 key로 찾기<input type="text" id="histKey" placeholder="예: 수원|신풍초등학교"></label>
+        <div style="align-self:end"><button class="btn" id="histBtn" type="button">조회</button> <button class="btn" id="logoutBtn" type="button">로그아웃</button></div></div>
+      <div id="hist"></div>
+    </div>
+  </div>
+</div>
+<script src="vendor/xlsx.full.min.js"></script>
+<script>
+(function(){
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let csrf = '';
+  async function call(url, opt = {}) {
+    const r = await fetch(url, Object.assign({ credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf } }, opt));
+    let j = {}; try { j = await r.json(); } catch {}
+    return { status: r.status, body: j };
+  }
+  async function me() {
+    const r = await call('api/admin/me');
+    if (r.status === 200) { csrf = r.body.csrf; $('#loginCard').hidden = true; $('#adminArea').hidden = false; loadHist(); }
+  }
+  $('#loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await call('api/admin/login', { method: 'POST', body: JSON.stringify({ password: $('#pw').value }) });
+    if (r.status === 200) { csrf = r.body.csrf; $('#pw').value = ''; me(); }
+    else $('#loginMsg').textContent = r.body.error || (r.status === 404 || r.status === 405 ? '관리 서버가 실행 중이 아닙니다(정적 호스팅).' : '로그인 실패');
+  });
+  $('#logoutBtn').addEventListener('click', async () => { await call('api/admin/logout', { method: 'POST' }); location.reload(); });
+
+  async function fileToCSV(f) {
+    if (/\.xlsx?$/i.test(f.name)) {
+      const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+      return XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]], { blankrows: false });
+    }
+    const buf = await f.arrayBuffer();
+    let txt = new TextDecoder('utf-8', { fatal: false }).decode(buf);
+    if (txt.includes('�')) { try { txt = new TextDecoder('euc-kr').decode(buf); } catch {} } // 엑셀 저장 CP949 대비
+    return txt;
+  }
+  async function submit(apply) {
+    const f = $('#file').files[0];
+    if (!f) { $('#impMsg').innerHTML = '<p class="err">파일을 선택하세요.</p>'; return; }
+    const payload = { kind: $('#kind').value, year: $('#year').value, csv: await fileToCSV(f), comment: $('#comment').value, apply,
+      effective_from: $('#effFrom').value || undefined, document: $('#docName').value || undefined };
+    const r = await call('api/admin/import', { method: 'POST', body: JSON.stringify(payload) });
+    const b = r.body;
+    if (r.status === 422) {
+      $('#impMsg').innerHTML = `<p class="err">검증 오류 ${b.count}건 — 수정 후 다시 올려 주세요.</p><pre>${esc(b.errors.join('\n'))}</pre>`;
+      $('#applyBtn').disabled = true; return;
+    }
+    if (r.status !== 200) { $('#impMsg').innerHTML = `<p class="err">${esc(b.error || '오류')}</p>`; $('#applyBtn').disabled = true; return; }
+    if (b.preview) {
+      $('#impMsg').innerHTML = `<p class="ok">검증 통과: ${b.rows}행 · 변경 ${b.changeCount}건${b.newYear ? ' · 새 연도 자료로 등록됩니다' : ''}</p>` +
+        `<pre>${esc((b.changes || []).map((c) => `${c.type}\t${c.key}\t${c.field || ''}\t${c.from ?? ''} → ${c.to ?? ''}`).join('\n') || '변경 없음')}</pre>`;
+      $('#applyBtn').disabled = false;
+    } else {
+      $('#impMsg').innerHTML = `<p class="ok">적용 완료: ${b.rows}행, 변경 ${b.changeCount}건. 이전 자료 보관: ${esc(b.archived || '없음(신규)')}</p>`;
+      $('#applyBtn').disabled = true; loadHist();
+    }
+  }
+  $('#previewBtn').addEventListener('click', () => submit(false));
+  $('#applyBtn').addEventListener('click', () => { if (confirm('검증된 내용을 적용할까요? 기존 자료는 보관됩니다.')) submit(true); });
+  ['kind','year','file'].forEach((id) => $('#' + id).addEventListener('change', () => ($('#applyBtn').disabled = true)));
+
+  async function loadHist() {
+    const k = $('#histKey').value.trim();
+    const r = await call('api/admin/history' + (k ? '?key=' + encodeURIComponent(k) : ''));
+    const items = (r.body.items || []).slice(0, 300);
+    $('#hist').innerHTML = items.length ? `<table><thead><tr><th>시각</th><th>종류</th><th>학교</th><th>내용</th><th>사유</th></tr></thead><tbody>${
+      items.map((x) => `<tr><td>${esc(x.time.slice(0,16).replace('T',' '))}</td><td>${esc(x.kind)} ${esc(x.type)}</td><td>${esc(x.key)}</td><td>${esc(x.field || '')} ${esc(x.from ?? '')} → ${esc(x.to ?? '')}</td><td>${esc(x.comment)}</td></tr>`).join('')}</tbody></table>`
+      : '<p class="small muted">기록된 변경이 없습니다.</p>';
+  }
+  $('#histBtn').addEventListener('click', loadHist);
+  me();
+})();
+</script>
+</body>
+</html>

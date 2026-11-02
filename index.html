@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>경기 초등 인사구역 지도</title>
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="vendor/MarkerCluster.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <h1>경기도 초등 인사구역 · 승진 가산점 학교 지도</h1>
+    <div class="basis" id="basis">기준 자료 불러오는 중…</div>
+  </div>
+  <div class="top-actions">
+    <label class="sr" for="yearSel">기준 연도</label>
+    <select id="yearSel" title="기준 연도"></select>
+    <button id="helpBtn" class="btn ghost" type="button">도움말</button>
+    <button id="checkBtn" class="btn ghost" type="button">자료 점검</button>
+  </div>
+</header>
+
+<main class="layout" id="layout" data-view="map">
+  <aside class="panel" id="panel">
+    <section class="filters" aria-label="검색 조건">
+      <div class="search-row">
+        <input id="q" type="search" placeholder="학교명 검색 (예: 신풍, 대성동)" autocomplete="off">
+      </div>
+      <div class="sel-row">
+        <label>교육지원청<select id="officeSel"><option value="">전체</option></select></label>
+        <label>시·군<select id="citySel"><option value="">전체</option></select></label>
+      </div>
+      <fieldset class="chips" id="zoneChips">
+        <legend>인사구역</legend>
+        <label class="chip z-갑"><input type="checkbox" value="갑" checked><span>갑</span></label>
+        <label class="chip z-을"><input type="checkbox" value="을" checked><span>을</span></label>
+        <label class="chip z-병"><input type="checkbox" value="병" checked><span>병</span></label>
+        <span class="chip-sep" aria-hidden="true"></span>
+        <span class="sub-label">병 세부</span>
+        <span id="subChips">
+          <label class="chip small"><input type="checkbox" value="가" checked><span>가</span></label>
+          <label class="chip small"><input type="checkbox" value="나" checked><span>나</span></label>
+          <label class="chip small"><input type="checkbox" value="다" checked><span>다</span></label>
+          <label class="chip small"><input type="checkbox" value="라" checked><span>라</span></label>
+        </span>
+      </fieldset>
+      <fieldset class="chips" id="bonusChips">
+        <legend>승진 가산점 <span class="muted">(인사구역과 별개)</span></legend>
+        <label class="chip"><input type="checkbox" value="island"><span>도서·벽지 지정</span></label>
+        <label class="chip"><input type="checkbox" value="rural"><span>농어촌·공단 지정</span></label>
+        <label class="chip"><input type="checkbox" value="unknown"><span>확인 필요</span></label>
+      </fieldset>
+      <div class="opt-row">
+        <label class="toggle"><input type="checkbox" id="optBounds" checked> 지도 영역 안 학교만 목록에</label>
+        <label class="toggle"><input type="checkbox" id="optClosed"> 폐·휴교 포함</label>
+        <button class="btn link" id="resetBtn" type="button">조건 초기화</button>
+      </div>
+    </section>
+
+    <section class="summary" id="summary" aria-live="polite"></section>
+
+    <section class="list-wrap">
+      <ol class="list" id="list"></ol>
+      <details class="noloc" id="nolocBox">
+        <summary id="nolocSum">위치 확인 필요</summary>
+        <p class="muted small">주소·좌표가 확인되지 않아 지도에 표시하지 않은 학교입니다. 임의 위치에 찍지 않습니다.</p>
+        <ol class="list" id="nolocList"></ol>
+      </details>
+    </section>
+  </aside>
+
+  <section class="mapwrap">
+    <div id="map" role="region" aria-label="경기도 학교 지도"></div>
+    <details class="legend" id="legend" open>
+      <summary class="lg-title">범례 · 마커 색 = 인사구역</summary>
+      <div><i class="dot z-갑"></i>갑 <i class="dot z-을"></i>을 <i class="dot z-병"></i>병<small>(글자: 가·나·다·라)</small></div>
+      <div class="lg-title">배지 = 승진 가산점 현재 지정</div>
+      <div><i class="bdg island">도</i>도서벽지 <i class="bdg rural">농</i>농어촌</div>
+      <div class="muted small" id="tileNote"></div>
+    </details>
+  </section>
+
+  <aside class="detail" id="detail" hidden>
+    <button class="btn close" id="detailClose" type="button" aria-label="닫기">×</button>
+    <div id="detailBody"></div>
+  </aside>
+</main>
+
+<nav class="mobile-tabs" aria-label="보기 전환">
+  <button type="button" data-view="map" class="on">지도</button>
+  <button type="button" data-view="list">목록 <span id="mCount"></span></button>
+</nav>
+
+<dialog id="helpDlg">
+  <form method="dialog"><button class="btn close" aria-label="닫기">×</button></form>
+  <h2>인사구역과 승진 가산점은 다릅니다</h2>
+  <dl class="help">
+    <dt>인사구역 (갑·을·병, 병의 가·나·다·라)</dt>
+    <dd>경기도교육청이 「경기도교육공무원인사관리세부기준」 [별표1]로 정하는 <b>전보(인사이동) 관리 구역</b>입니다. 동일 구역 근무기간 제한, 전보 순위의 <b>전보 가산</b>(제16조③ 지역가산표: 을 50%, 병 가·나 100%, 병 다·라 70%, 5학급 이하·분교장 30%) 등에 쓰입니다.</dd>
+    <dt>승진 가산점 (도서벽지·농어촌)</dt>
+    <dd>교감·교장 <b>승진 평정</b>에 쓰이는 별도 점수로, 해당 시기의 공식 평정 규정과 대상 학교 지정 자료로만 판단합니다. 인사구역이 병이라고 해서 도서벽지 대상이라고 단정할 수 없습니다.</dd>
+    <dt>이 지도의 표시 원칙</dt>
+    <dd>지정 여부는 승진평정 참고자료의 지정 이력·지정현황(문서 31~41쪽)으로, 점수는 같은 자료의 선택가산점 평정점 표(문서 16~18쪽)로 판단합니다. 오늘이 지정기간 안에 있으면 '현재 지정', 기간이 끝났으면 '지정 종료', 자료에 없으면 '확인 필요'입니다. 원문에 도서·벽지는 "시행규칙 및 발령대장, 교육장 발행 경력확인서가 인정 기준이며 본 자료는 참고로만 활용"(31쪽), 농어촌은 "학교가 누락되었을 수 있으며 인정 여부는 증빙서류에 따라 결정"(36쪽)된다고 적혀 있어, 실제 인정은 증빙서류로 확인해야 하며 자료에 없는 학교를 '비대상'으로 처리하지 않습니다. 개인별 누적 승진점수 계산은 제공하지 않습니다.</dd>
+    <dt>월 평정점 (문서 16~17쪽)</dt>
+    <dd>도서·벽지·접적: 가 0.045, 나 0.036, 다 0.027, 라 0.018 (상한 2.00). 농어촌·공단·접경: 면(읍면)·접경 0.018, 읍(동)·교육감지정 접경(교육특별) 0.015, 공단 0.012 (상한 2.00). 두 가산점을 합한 상한도 2.00점입니다. 1개월 미만은 일 평정점으로 계산합니다.</dd>
+    <dt>급지 표기</dt>
+    <dd>도서·벽지·접적: 가·나·다·라 급지. 농어촌: 2009.2.28. 이전 '읍면·동·공단A·공단B', 2009.3.1. 이후 '읍·면·공단'. 공단A는 같은 기간 농어촌 '읍면', 공단B는 '동'에 해당하는 점수를 받습니다(문서 36쪽). 교육감 지정 접경지역 학교는 농어촌 '읍'과 같은 점수입니다(문서 41쪽). 인사구역 병의 가·나·다·라와 도서벽지 급지는 서로 다른 기준입니다.</dd>
+    <dt>표기 기호 (원문 PDF)</dt>
+    <dd>밑줄 = 폐·휴교, 음영 = 2027학년도 신설예정교. 적색 글자는 PDF 범례에 설명이 없어 '적색 표기'로만 기록합니다. 학교수 괄호 안 숫자는 운영 분교장 수입니다.</dd>
+    <dt>위치 자료</dt>
+    <dd id="locHelp"></dd>
+  </dl>
+</dialog>
+
+<dialog id="checkDlg" class="wide">
+  <form method="dialog"><button class="btn close" aria-label="닫기">×</button></form>
+  <h2>자료 점검 결과</h2>
+  <div id="checkBody"></div>
+</dialog>
+
+<script src="config.js"></script>
+<script src="vendor/leaflet.js"></script>
+<script src="vendor/leaflet.markercluster.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

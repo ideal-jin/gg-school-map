@@ -1,0 +1,16 @@
+{
+  "datasets": [
+    {
+      "year": 2027,
+      "label": "2027학년도",
+      "path": "data/2027/schools.json",
+      "validation": "data/2027/validation.json",
+      "effective_from": "2027-03-01",
+      "effective_to": null,
+      "document": "2027학년도 경기도교육공무원인사관리세부기준(유치원, 초등) [별표1]",
+      "revision": "68차 개정 2026. 10. 28.",
+      "pdf": "data/docs/2027_gyeonggi_hr_criteria_kinder_elem.pdf"
+    }
+  ],
+  "note": "2026학년도(현재 시행) 인사구역 자료는 아직 등록되지 않았습니다. 해당 연도 기준 PDF를 추출해 data/2026/ 에 추가하면 선택 목록에 나타납니다."
+}
