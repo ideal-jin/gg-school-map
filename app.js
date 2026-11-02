@@ -50,19 +50,36 @@
     map = L.map('map', { zoomControl: false, preferCanvas: false, minZoom: 8, maxZoom: 18 })
       .setView(CFG.initialCenter || [37.55, 127.15], CFG.initialZoom || 9);
     L.control.zoom({ position: 'topright' }).addTo(map);
-    let tileUrl = CFG.osmTileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-    let attribution = '&copy; OpenStreetMap contributors';
-    if (CFG.baseMap === 'vworld' && CFG.vworldKey) {
-      tileUrl = `https://api.vworld.kr/req/wmts/1.0.0/${encodeURIComponent(CFG.vworldKey)}/Base/{z}/{y}/{x}.png`;
-      attribution = '&copy; 국토교통부 브이월드';
+    // 배경지도: 기본은 단순한 밝은 지도(CARTO Voyager). 오른쪽 위에서 바꿀 수 있고, 선택은 이 브라우저에 기억된다.
+    const OSM = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+    const CARTO = OSM + ' &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    const bases = {
+      simple: { label: '단순 지도', layer: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', attribution: CARTO, maxZoom: 19 }) },
+      light: { label: '아주 단순(흑백)', layer: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', attribution: CARTO, maxZoom: 19 }) },
+      osm: { label: '자세한 지도(OSM)', layer: L.tileLayer(CFG.osmTileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: OSM, maxZoom: 19 }) },
+    };
+    if (CFG.vworldKey) {
+      const vw = (t, ext) => `https://api.vworld.kr/req/wmts/1.0.0/${encodeURIComponent(CFG.vworldKey)}/${t}/{z}/{y}/{x}.${ext}`;
+      bases.vworld_white = { label: '브이월드 흰색', layer: L.tileLayer(vw('white', 'png'), { attribution: '&copy; 국토교통부 브이월드', maxZoom: 19 }) };
+      bases.vworld = { label: '브이월드 기본', layer: L.tileLayer(vw('Base', 'png'), { attribution: '&copy; 국토교통부 브이월드', maxZoom: 19 }) };
     }
-    tileLayer = L.tileLayer(tileUrl, { attribution, maxZoom: 19 });
+    let saved = null;
+    try { saved = localStorage.getItem('baseMap'); } catch {}
+    const start = bases[saved] ? saved : bases[CFG.baseMap] ? CFG.baseMap : 'simple';
     let tileErr = 0;
-    tileLayer.on('tileerror', () => {
-      tileErr++;
-      if (tileErr === 4) $('#tileNote').textContent = '배경지도 타일을 불러오지 못해 시·군 경계만 표시합니다.';
+    for (const [k, b] of Object.entries(bases)) {
+      b.layer.on('tileerror', () => {
+        tileErr++;
+        if (tileErr === 4) $('#tileNote').textContent = '배경지도 타일을 불러오지 못해 시·군 경계만 표시합니다.';
+      });
+    }
+    tileLayer = bases[start].layer.addTo(map);
+    L.control.layers(Object.fromEntries(Object.values(bases).map((b) => [b.label, b.layer])), null, { position: 'topright', collapsed: true }).addTo(map);
+    map.on('baselayerchange', (e) => {
+      tileErr = 0; $('#tileNote').textContent = '';
+      const k = Object.keys(bases).find((x) => bases[x].layer === e.layer);
+      try { localStorage.setItem('baseMap', k); } catch {}
     });
-    tileLayer.addTo(map);
     cluster = L.markerClusterGroup({
       showCoverageOnHover: false, maxClusterRadius: 46, spiderfyOnMaxZoom: true, disableClusteringAtZoom: 15,
       iconCreateFunction(c) {

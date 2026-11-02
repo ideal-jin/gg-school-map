@@ -1,8 +1,10 @@
-// 지도 설정 — API 키가 필요한 지도를 쓰려면 아래 값을 채우세요. (README '지도 설정' 참고)
+// 지도 설정
 window.APP_CONFIG = {
-  // 'osm' (키 불필요, 기본) | 'vworld' (국토교통부 브이월드, 키 필요)
-  baseMap: 'osm',
-  vworldKey: '',            // https://www.vworld.kr 에서 발급, 서비스 URL(도메인) 등록 필요
+  // 처음 보여 줄 배경지도: 'simple'(단순 지도, 기본) | 'light'(아주 단순, 흑백) | 'osm'(자세한 지도)
+  //                         | 'vworld_white' | 'vworld'  ← 아래 vworldKey를 넣었을 때만
+  // 방문자는 지도 오른쪽 위 버튼으로 바꿀 수 있고, 고른 지도는 그 브라우저에 기억됩니다.
+  baseMap: 'simple',
+  vworldKey: '',            // https://www.vworld.kr 에서 발급, 서비스 URL에 https://ideal-jin.github.io 등록
   osmTileUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   initialCenter: [37.55, 127.15],
   initialZoom: 9
