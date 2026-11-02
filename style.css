@@ -157,3 +157,45 @@ table.mini th:first-child,table.mini td:first-child{text-align:left}
 .leaflet-control-attribution a{color:var(--accent)}
 .leaflet-tooltip{background:var(--surface);color:var(--ink);border-color:var(--line)}
 .box table.mini td,.box table.mini th{white-space:nowrap}
+
+/* 왼쪽 패널 탭 */
+.ptabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line);background:var(--panel)}
+.ptabs button{border:0;background:none;padding:10px 6px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}
+.ptabs button.on{color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent)}
+.ptabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.pane{display:flex;flex-direction:column;min-height:0;flex:1}
+.pane[hidden]{display:none!important}
+.small-btn{font-size:11.5px;padding:2px 8px;margin-left:6px;vertical-align:1px;color:var(--accent)}
+/* 계산기 */
+.calc-top{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.calc-top p{margin:0}
+.calc-asof{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.calc-add{position:relative;display:flex;flex-direction:column;gap:6px}
+.calc-add input[type=search]{width:100%}
+.calc-pick{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:6px;background:var(--surface);max-height:220px;overflow:auto}
+.calc-pick:empty{display:none}
+.calc-pick .pick{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--row-line);background:none;padding:7px 10px;font:inherit;color:var(--ink);cursor:pointer}
+.calc-pick .pick:hover{background:var(--hover)}
+.calc-btns{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.calc-rows{list-style:none;margin:0;padding:0}
+.crow{padding:10px 12px;border-bottom:1px solid var(--row-line);display:flex;flex-direction:column;gap:6px}
+.crow-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.crow-h select,.crow-h input{font-size:12.5px;padding:3px 6px}
+.crow-h input{flex:1;min-width:90px}
+.cnum{display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--sel-chip);color:var(--accent);font-size:11px;font-weight:700;align-items:center;justify-content:center}
+.cdel{margin-left:auto;font-size:12px}
+.crow-d{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.crow-d label{display:flex;flex-direction:column;font-size:11.5px;color:var(--muted);gap:2px}
+.crow-d input{font:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:var(--surface);color:var(--ink);min-width:0}
+.tblwrap{overflow-x:auto}
+.crow table.mini{width:100%}
+.crow table.mini td,.crow table.mini th{white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:top;line-height:1.35}
+.crow table.mini td .muted{font-size:11px}
+.cwarn{font-size:11.5px;color:var(--warn)}
+.calc-sum{padding:10px 12px;border-top:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:4px}
+.csum-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:13px}
+.csum-row b{margin-left:auto;font-variant-numeric:tabular-nums}
+.csum-row.total{font-size:15px;border-top:1px solid var(--line);padding-top:6px}
+.csum-row.total b{color:var(--accent)}
+.calc-help{padding:6px 12px 12px;color:var(--muted)}
+.calc-help ul{padding-left:18px;margin:6px 0 0;line-height:1.55}

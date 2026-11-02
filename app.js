@@ -331,7 +331,7 @@
       <div class="src">근거: ${esc(src.doc)} ${esc(src.table)}, 문서 ${src.doc_page}쪽(PDF ${src.pdf_page}쪽)${state.ds.pdf ? ` · <a href="${esc(state.ds.pdf)}#page=${src.pdf_page}" target="_blank" rel="noopener">원문 보기</a>` : ''}<br>
         적용: ${fmtDate(src.effective_from)} ~ ${src.effective_to ? fmtDate(src.effective_to) : '차기 기준 시행 전까지'} · 확인일 ${fmtDate(src.checked)}</div>
 
-      <h3>승진 가산점 (승진 평정, 인사구역과 별개)</h3>
+      <h3>승진 가산점 (승진 평정, 인사구역과 별개) <button type="button" class="btn small-btn" data-addcalc="${esc(s.key)}">내 계산에 추가</button></h3>
       ${b.island.status === '대상' && s.zone === '병' && b.island.rec.grade && s.zone_sub && b.island.rec.grade !== s.zone_sub ? `<div class="src">인사구역 병·${esc(s.zone_sub)}와 도서벽지 급지 ${esc(b.island.rec.grade)}는 서로 다른 기준입니다.</div>` : ''}
       ${s.status === '폐·휴교' && (b.island.status === '대상' || b.rural.status === '대상') ? '<div class="src">별표1에는 폐·휴교로 표시되어 있으나 지정 자료에는 지정이 유지된 것으로 적혀 있습니다.</div>' : ''}
       ${bonusBox('island', b.island)}
@@ -513,6 +513,23 @@
       await loadDataset(d); applyFilters();
     });
     $$('.mobile-tabs button').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+    // 내 가산점 계산 탭
+    window.GG = { state, select };
+    const showTab = (calc) => {
+      $('#findPane').hidden = calc; $('#calcPane').hidden = !calc;
+      $('#tabFind').classList.toggle('on', !calc); $('#tabCalc').classList.toggle('on', calc);
+      $('#tabFind').setAttribute('aria-selected', String(!calc)); $('#tabCalc').setAttribute('aria-selected', String(calc));
+      if (calc && window.GGCalc) window.GGCalc.render();
+    };
+    $('#tabFind').addEventListener('click', () => showTab(false));
+    $('#tabCalc').addEventListener('click', () => showTab(true));
+    if (window.GGCalc) window.GGCalc.init();
+    $('#detailBody').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-addcalc]'); if (!b || !window.GGCalc) return;
+      window.GGCalc.addSchool(b.dataset.addcalc); showTab(true);
+      if (window.matchMedia('(max-width:860px)').matches) setView('list');
+      b.textContent = '계산기에 추가됨';
+    });
   }
 
   start().catch((e) => {
