@@ -66,17 +66,24 @@
     let saved = null;
     try { saved = localStorage.getItem('baseMap'); } catch {}
     const start = bases[saved] ? saved : bases[CFG.baseMap] ? CFG.baseMap : 'simple';
-    let tileErr = 0;
+    let tileErr = 0, tileOk = 0;
     for (const [k, b] of Object.entries(bases)) {
+      b.layer.on('tileload', () => { tileOk++; });
       b.layer.on('tileerror', () => {
         tileErr++;
-        if (tileErr === 4) $('#tileNote').textContent = '배경지도 타일을 불러오지 못해 시·군 경계만 표시합니다.';
+        // 브이월드 키·도메인 문제로 타일이 안 나오면 단순 지도로 자동 전환
+        if (k.startsWith('vworld') && tileErr >= 4 && tileOk === 0 && map.hasLayer(b.layer)) {
+          map.removeLayer(b.layer); tileLayer = bases.simple.layer.addTo(map); tileErr = 0;
+          $('#tileNote').textContent = '브이월드 지도를 불러오지 못해 단순 지도로 바꿨습니다.';
+          return;
+        }
+        if (tileErr === 4 && tileOk === 0) $('#tileNote').textContent = '배경지도 타일을 불러오지 못해 시·군 경계만 표시합니다.';
       });
     }
     tileLayer = bases[start].layer.addTo(map);
     L.control.layers(Object.fromEntries(Object.values(bases).map((b) => [b.label, b.layer])), null, { position: 'topright', collapsed: true }).addTo(map);
     map.on('baselayerchange', (e) => {
-      tileErr = 0; $('#tileNote').textContent = '';
+      tileErr = 0; tileOk = 0; $('#tileNote').textContent = '';
       const k = Object.keys(bases).find((x) => bases[x].layer === e.layer);
       try { localStorage.setItem('baseMap', k); } catch {}
     });
