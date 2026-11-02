@@ -50,31 +50,29 @@
     map = L.map('map', { zoomControl: false, preferCanvas: false, minZoom: 8, maxZoom: 18 })
       .setView(CFG.initialCenter || [37.55, 127.15], CFG.initialZoom || 9);
     L.control.zoom({ position: 'topright' }).addTo(map);
-    // 배경지도: 기본은 단순한 밝은 지도(CARTO Voyager). 오른쪽 위에서 바꿀 수 있고, 선택은 이 브라우저에 기억된다.
+    // 배경지도: 기본은 브이월드 흰색 지도. 오른쪽 위에서 바꿀 수 있고, 선택은 이 브라우저에 기억된다.
     const OSM = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-    const CARTO = OSM + ' &copy; <a href="https://carto.com/attributions">CARTO</a>';
-    const bases = {
-      simple: { label: '단순 지도', layer: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', attribution: CARTO, maxZoom: 19 }) },
-      light: { label: '아주 단순(흑백)', layer: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', attribution: CARTO, maxZoom: 19 }) },
-      osm: { label: '자세한 지도(OSM)', layer: L.tileLayer(CFG.osmTileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: OSM, maxZoom: 19 }) },
-    };
+    const bases = {};
     if (CFG.vworldKey) {
       const vw = (t, ext) => `https://api.vworld.kr/req/wmts/1.0.0/${encodeURIComponent(CFG.vworldKey)}/${t}/{z}/{y}/{x}.${ext}`;
-      bases.vworld_white = { label: '브이월드 흰색', layer: L.tileLayer(vw('white', 'png'), { attribution: '&copy; 국토교통부 브이월드', maxZoom: 19 }) };
-      bases.vworld = { label: '브이월드 기본', layer: L.tileLayer(vw('Base', 'png'), { attribution: '&copy; 국토교통부 브이월드', maxZoom: 19 }) };
+      const VW = '&copy; 국토교통부 브이월드';
+      bases.vworld_white = { label: '흰색 지도 (단순)', layer: L.tileLayer(vw('white', 'png'), { attribution: VW, maxZoom: 19 }) };
+      bases.vworld_gray = { label: '회색 지도 (아주 단순)', layer: L.tileLayer(vw('gray', 'png'), { attribution: VW, maxZoom: 19 }) };
+      bases.vworld = { label: '기본 지도 (자세히)', layer: L.tileLayer(vw('Base', 'png'), { attribution: VW, maxZoom: 19 }) };
     }
+    bases.osm = { label: 'OpenStreetMap', layer: L.tileLayer(CFG.osmTileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: OSM, maxZoom: 19 }) };
     let saved = null;
     try { saved = localStorage.getItem('baseMap'); } catch {}
-    const start = bases[saved] ? saved : bases[CFG.baseMap] ? CFG.baseMap : 'simple';
+    const start = bases[saved] ? saved : bases[CFG.baseMap] ? CFG.baseMap : Object.keys(bases)[0];
     let tileErr = 0, tileOk = 0;
     for (const [k, b] of Object.entries(bases)) {
       b.layer.on('tileload', () => { tileOk++; });
       b.layer.on('tileerror', () => {
         tileErr++;
-        // 브이월드 키·도메인 문제로 타일이 안 나오면 단순 지도로 자동 전환
+        // 브이월드 키·도메인 문제로 타일이 안 나오면 OpenStreetMap으로 자동 전환
         if (k.startsWith('vworld') && tileErr >= 4 && tileOk === 0 && map.hasLayer(b.layer)) {
-          map.removeLayer(b.layer); tileLayer = bases.simple.layer.addTo(map); tileErr = 0;
-          $('#tileNote').textContent = '브이월드 지도를 불러오지 못해 단순 지도로 바꿨습니다.';
+          map.removeLayer(b.layer); tileLayer = bases.osm.layer.addTo(map); tileErr = 0;
+          $('#tileNote').textContent = '브이월드 지도를 불러오지 못해 OpenStreetMap으로 바꿨습니다.';
           return;
         }
         if (tileErr === 4 && tileOk === 0) $('#tileNote').textContent = '배경지도 타일을 불러오지 못해 시·군 경계만 표시합니다.';
