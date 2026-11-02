@@ -6,7 +6,7 @@
 <title>경기 초등 인사구역 지도</title>
 <link rel="stylesheet" href="vendor/leaflet.css">
 <link rel="stylesheet" href="vendor/MarkerCluster.css">
-<link rel="stylesheet" href="style.css?v=20261102c">
+<link rel="stylesheet" href="style.css?v=20261102d">
 </head>
 <body>
 <header class="topbar">
@@ -26,7 +26,7 @@
   <aside class="panel" id="panel">
     <div class="ptabs" role="tablist">
       <button type="button" role="tab" id="tabFind" aria-selected="true" class="on">학교 찾기</button>
-      <button type="button" role="tab" id="tabCalc" aria-selected="false">내 가산점 계산</button>
+      <button type="button" role="tab" id="tabCalc" aria-selected="false">내 점수·갑만기</button>
     </div>
     <div id="findPane" class="pane">
     <section class="filters" aria-label="검색 조건">
@@ -90,6 +90,16 @@
         <ol id="calcRows" class="calc-rows"></ol>
       </div>
       <section class="calc-sum" id="calcSum" aria-live="polite"></section>
+      <section class="gap-box" aria-labelledby="gapTitle">
+        <h3 id="gapTitle">갑구역 만기 확인 <span class="muted small">(교사, 제10조)</span></h3>
+        <div class="gap-opts">
+          <label>기준 정기전보일 <input type="date" id="gapDate"></label>
+          <label>생년월일(선택) <input type="date" id="gapBirth"></label>
+          <label class="toggle"><input type="checkbox" id="gapDisabled"> 중증장애인 등록</label>
+          <label class="toggle"><input type="checkbox" id="gapKids"> 세 자녀 이상</label>
+        </div>
+        <div id="gapResult" aria-live="polite"></div>
+      </section>
       <details class="calc-help small">
         <summary>계산 방법과 주의할 점</summary>
         <ul>
@@ -98,6 +108,8 @@
           <li>월평정점: 도서벽지 가 0.045·나 0.036·다 0.027·라 0.018 / 농어촌 면(읍면)·접경 0.018, 읍(동)·교육감지정 접경 0.015, 공단 0.012(문서 16~17쪽).</li>
           <li>상한: 도서벽지 2.00, 농어촌·공단·접경 2.00, 두 가산점 합산 2.00. 2007.3.1. 이후 같은 날 두 가산점이 겹치면 높은 점수 하나만 셉니다.</li>
           <li>파견·휴직 기간은 빼고 입력하세요(근무기간을 나눠 여러 줄로 입력). 타시도·폐교 학교는 "직접 입력"으로 넣습니다.</li>
+          <li><b>갑구역 만기</b>: 가장 최근 학교부터 거꾸로, 같은 교육지원청 안에서 이어진 갑(특→갑 포함) 근무를 더해 정기전보일 전날 기준 10년이 되면 만기로 봅니다. 다른 교육지원청 근무는 넣지 않습니다(제10조①2의1). 중간에 을·병 근무가 있으면 그 뒤부터 다시 셉니다. 2019.3.1. 이전 을구역 근무는 부칙에 명시되어 있고, 그 이후 을·병 근무도 같은 방식으로 본 것은 '동일 인사구역 내 근무기간'에 대한 해석입니다. 교육지원청이 별도로 정한 제한(제10조①3)은 반영하지 않았습니다.</li>
+          <li>인사구역은 2027년 표 기준으로 자동 지정됩니다. 근무하던 때 구역이 달랐다면 학교마다 '근무 당시 인사구역'을 바꿔 주세요.</li>
           <li><b>참고용 추정치입니다.</b> 실제 점수는 G-인사이트의 나이스 인사기록과 교육장·학교장 경력확인서로 결정됩니다. '95~'97년 농어촌 경력의 주민등록 요건, '97.12.31 이전 장관·교육감 인정점 구분은 반영하지 않았습니다.</li>
         </ul>
       </details>
@@ -155,10 +167,10 @@
   <div id="checkBody"></div>
 </dialog>
 
-<script src="config.js?v=20261102c"></script>
+<script src="config.js?v=20261102d"></script>
 <script src="vendor/leaflet.js"></script>
 <script src="vendor/leaflet.markercluster.js"></script>
-<script src="app.js?v=20261102c"></script>
-<script src="calc.js?v=20261102c"></script>
+<script src="app.js?v=20261102d"></script>
+<script src="calc.js?v=20261102d"></script>
 </body>
 </html>

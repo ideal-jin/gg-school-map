@@ -199,3 +199,20 @@ table.mini th:first-child,table.mini td:first-child{text-align:left}
 .csum-row.total b{color:var(--accent)}
 .calc-help{padding:6px 12px 12px;color:var(--muted)}
 .calc-help ul{padding-left:18px;margin:6px 0 0;line-height:1.55}
+
+/* 갑구역 만기 */
+.crow-z{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.crow-z label{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--muted)}
+.crow-z select{font-size:12px;padding:2px 4px;max-width:100%}
+.gap-box{padding:10px 12px 12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px;background:var(--panel)}
+.gap-box h3{font-size:13.5px;margin:0}
+.gap-opts{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:12px;color:var(--muted)}
+.gap-opts label:not(.toggle){display:flex;flex-direction:column;gap:2px}
+.gap-opts input[type=date]{font:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--surface);color:var(--ink);min-width:0}
+.gap-verdict{font-weight:700;font-size:13.5px;padding:7px 10px;border-radius:6px;border:1px solid var(--line)}
+.gap-verdict.hit{background:var(--warn-bg);border-color:var(--warn-bd);color:var(--warn)}
+.gap-verdict.ok{background:var(--cur-bg);border-color:var(--cur-bd);color:var(--cur-fg)}
+.gap-verdict.none{color:var(--muted)}
+.ok-note{color:var(--cur-fg)}
+#calcPane{overflow:auto}
+#calcPane .list-wrap{flex:none;overflow:visible}
